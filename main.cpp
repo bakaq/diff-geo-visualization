@@ -24,7 +24,7 @@ typedef std::array<std::array<double, 2>, 2> Matrix2;
 
 Matrix2 metric(std::array<double,2> coord){
 	Matrix2 m = {std::array<double,2>{1,0},
-				 std::array<double,2>{0,pow(coord[0],2)}};
+				 std::array<double,2>{0,pow(coord[0], 2)}};
 	return m;
 }
 
@@ -44,20 +44,22 @@ Matrix3 gamma(std::array<double, 2> coord){
 	Matrix3 Gamma;
 
 	for(int i = 0; i < 2; ++i){
-	 for(int j = 0; j < 2; ++i){
+	 for(int j = 0; j < 2; ++j){
 	  for(int k = 0; k < 2; ++k){
+		//printf("Calculating gamma: i,j,k = %d, %d, %d\n", i, j, k);
 		if(k > j){
 			// Symetrization
 			Gamma[i][j][k] = Gamma[i][k][j];		
 		}else{
 			Gamma[i][j][k] = 0;
 			
-			for(int l = 0; i < 2; ++l){
-				std::array<double, 2> delta1, delta2, delta3 = coord;
-
+			for(int l = 0; l < 2; ++l){
+				//printf("l = %d\n", l);
+				std::array<double, 2> delta1 = coord, delta2 = coord, delta3 = coord;
+				
 				delta1[k] += h;
 				double term1 = (metric(delta1)[l][j] - metric(coord)[l][j])/h;
-				
+
 				delta2[j] += h;
 				double term2 = (metric(delta2)[l][k] - metric(coord)[l][k])/h;
 
@@ -66,12 +68,11 @@ Matrix3 gamma(std::array<double, 2> coord){
 				
 				Gamma[i][j][k] += inv_metric(coord)[i][l]*(term1 + term2 - term3);
 			}
-			
-			Gamma[i][j][k] = (1/2)*Gamma[i][j][k];
+			Gamma[i][j][k] = (0.5)*Gamma[i][j][k];
 		}
 	  }
 	 }
-	}
+	}	
 
 	return Gamma;
 }
@@ -113,7 +114,22 @@ int main(){
 		}
 		
 		// Translate vector
-		v.pos[1] += 0.01;	
+		std::array<double, 2> dx = {0,0.001};
+		std::array<double, 2> dv;
+		Matrix3 G = gamma(v.pos);
+		for(int i = 0; i < 2; ++i){
+			dv[i] = 0;
+			for(int j = 0; j < 2; ++j){
+				for(int k = 0; k < 2; ++k){
+					dv[i] -= G[i][j][k]*v.vel[j]*dx[k];
+				}
+			}
+		}
+		
+		for(int i = 0; i < 2; ++i){
+			v.pos[i] += dx[i];
+			v.vel[i] += dv[i];
+		}
 
 		// Clear renderer 
 		SDL_SetRenderDrawColor(renderer, 0xFF,0xFF,0xFF,0xFF);
@@ -143,7 +159,9 @@ int main(){
 			SCREEN_H/2 - (int)((v.pos[0]*sin(v.pos[1])+v.pos[0]*v.vel[1]*cos(v.pos[1])+v.vel[0]*sin(v.pos[1]))*SCALE));
 
 		SDL_RenderPresent(renderer);
-		SDL_Delay((int)(1000/60));
+		
+		// Frame cap
+		SDL_Delay((int)(1000/600));
 	}
 
 	// Free stuff
