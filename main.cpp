@@ -22,9 +22,11 @@ struct Vec{
 // Define metric
 typedef std::array<std::array<double, 2>, 2> Matrix2;
 
+const enum{cartesian, polar} CHART = polar; 
+
 Matrix2 metric(std::array<double,2> coord){
 	Matrix2 m = {std::array<double,2>{1,0},
-				 std::array<double,2>{0,pow(coord[0], 2)}};
+				 std::array<double,2>{0,1}};
 	return m;
 }
 
@@ -152,12 +154,19 @@ int main(){
 		
 		// Draw vector
 		SDL_SetRenderDrawColor(renderer, 0xFF,0x00,0x00,0xFF);
-		SDL_RenderDrawLine(renderer,
-			SCREEN_W/2 + (int)(v.pos[0]*cos(v.pos[1])*SCALE),
-			SCREEN_H/2 - (int)(v.pos[0]*sin(v.pos[1])*SCALE),
-			SCREEN_W/2 + (int)((v.pos[0]*cos(v.pos[1])-v.pos[0]*v.vel[1]*sin(v.pos[1])+v.vel[0]*cos(v.pos[1]))*SCALE),
-			SCREEN_H/2 - (int)((v.pos[0]*sin(v.pos[1])+v.pos[0]*v.vel[1]*cos(v.pos[1])+v.vel[0]*sin(v.pos[1]))*SCALE));
-
+		if(CHART == cartesian){
+			SDL_RenderDrawLine(renderer,
+				SCREEN_W/2 + (int)(v.pos[0]*SCALE),
+				SCREEN_H/2 - (int)(v.pos[1]*SCALE),
+				SCREEN_W/2 + (int)((v.pos[0]+v.vel[0])*SCALE),
+				SCREEN_H/2 - (int)((v.pos[1]+v.vel[1])*SCALE));
+		}else if(CHART == polar){
+			SDL_RenderDrawLine(renderer,
+				SCREEN_W/2 + (int)(v.pos[0]*cos(v.pos[1])*SCALE),
+				SCREEN_H/2 - (int)(v.pos[0]*sin(v.pos[1])*SCALE),
+				SCREEN_W/2 + (int)((v.pos[0]*cos(v.pos[1])-v.pos[0]*v.vel[1]*sin(v.pos[1])+v.vel[0]*cos(v.pos[1]))*SCALE),
+				SCREEN_H/2 - (int)((v.pos[0]*sin(v.pos[1])+v.pos[0]*v.vel[1]*cos(v.pos[1])+v.vel[0]*sin(v.pos[1]))*SCALE));
+		}
 		SDL_RenderPresent(renderer);
 		
 		// Frame cap
