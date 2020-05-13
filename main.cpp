@@ -22,7 +22,7 @@ struct Vec{
 // Define metric
 typedef std::array<std::array<double, 2>, 2> Matrix2;
 
-const enum{cartesian, polar} CHART = polar; 
+const enum{cartesian, polar} CHART = cartesian; 
 
 Matrix2 metric(std::array<double,2> coord){
 	Matrix2 m = {std::array<double,2>{1,0},
@@ -103,20 +103,59 @@ int main(){
 	v.pos = {1,0};
 	v.vel = {0,0.5};
 
+
+	int mouse_x, mouse_y;
+	SDL_GetMouseState(&mouse_x, &mouse_y);
+
 	// Main loop
 	bool running = true;
 	SDL_Event e;
+	bool mouse_pressed = false;	
 	while(running){
-	
 		// Events
 		while(SDL_PollEvent(&e) != 0){
 			if(e.type == SDL_QUIT){
 				running = false;
 			}
+			if(e.type == SDL_MOUSEBUTTONDOWN){
+				if(e.button.button == SDL_BUTTON_LEFT){
+					mouse_pressed = true;
+				}
+			}
+			if(e.type == SDL_MOUSEBUTTONUP){
+				if(e.button.button == SDL_BUTTON_LEFT){
+					mouse_pressed = false;
+				}
+			}
+		}
+
+		// Translate vector
+		std::array<double, 2> dx = {0, 0};
+		
+		// From mouse movement
+		int new_mouse_x, new_mouse_y;
+		SDL_GetMouseState(&new_mouse_x, &new_mouse_y);
+		if(mouse_pressed){
+			if(CHART == cartesian){
+				dx[0] = ((double)new_mouse_x - mouse_x)/SCALE;
+				dx[1] = -((double)new_mouse_y - mouse_y)/SCALE;
+			}else if(CHART == polar){
+				double r_old = sqrt(pow((double)(mouse_x - SCREEN_W/2), 2) + pow((double)(mouse_y - SCREEN_H/2), 2));
+				double r_new = sqrt(pow((double)(new_mouse_x - SCREEN_W/2), 2) + pow((double)(new_mouse_y - SCREEN_H/2), 2));
+				dx[0] = (r_new - r_old)/SCALE;
+
+				double theta_old = atan2(-(double)(mouse_y - SCREEN_H/2), (double)(mouse_x - SCREEN_W/2));
+				double theta_new = atan2(-(double)(new_mouse_y - SCREEN_H/2), (double)(new_mouse_x - SCREEN_W/2));
+				dx[1] = (theta_new - theta_old);
+			}
 		}
 		
-		// Translate vector
-		std::array<double, 2> dx = {0,0.001};
+		mouse_x = new_mouse_x;
+		mouse_y = new_mouse_y;
+
+		// Circle in polar chart
+		//dx = {0,0.001};
+		
 		std::array<double, 2> dv;
 		Matrix3 G = gamma(v.pos);
 		for(int i = 0; i < 2; ++i){
